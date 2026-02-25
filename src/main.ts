@@ -179,7 +179,6 @@ interface Item {
       sprite.x = col * tileSize;
       sprite.y = row * tileSize;
       worldContainer.addChild(sprite);
-console.log(`Создаю предмет: тип=${obj.type}, col=${col}, row=${row}, gid=${obj.gid}`);
       items.push({ sprite, type: obj.type, col, row });
     }
   }
