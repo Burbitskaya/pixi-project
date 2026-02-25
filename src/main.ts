@@ -4,7 +4,9 @@ import {
   Sprite,
   Texture,
   Rectangle,
+  Graphics,
   Container,
+  Text
 } from "pixi.js";
 
 // --- Типы данных Tiled ---
@@ -102,6 +104,131 @@ interface Item {
   const mapContainer = new Container();
   worldContainer.addChild(mapContainer);
 
+
+//-----------HUD----------------------------
+const hudContainer = new Container();
+app.stage.addChild(hudContainer);
+
+const hudBackground = new Graphics();
+hudContainer.addChild(hudBackground); 
+
+// Создаём элементы интерфейса
+const titleText = new Text({
+  text: 'Dungeon Crawler',
+  style: { fill: '#ffffff', fontSize: 24, fontWeight: 'bold' }
+});
+hudContainer.addChild(titleText);
+
+const levelText = new Text({
+  text: 'lvl 1',
+  style: { fill: '#ffffff', fontSize: 20 }
+});
+hudContainer.addChild(levelText);
+
+// Иконка ключа (из тайлсета)
+const keyGid = 921;
+const keyLocalId = keyGid - firstgid;
+const keyTileX = (keyLocalId % tilesPerRow) * tileSize;
+const keyTileY = Math.floor(keyLocalId / tilesPerRow) * tileSize;
+const keyTexture = new Texture({
+  source: tilesetTexture.source,
+  frame: new Rectangle(keyTileX, keyTileY, tileSize, tileSize),
+});
+const keyIcon = new Sprite(keyTexture);
+keyIcon.width = 40;
+keyIcon.height = 40;
+hudContainer.addChild(keyIcon);
+
+const keyText = new Text({
+  text: '0/3',
+  style: { fill: '#ffffff', fontSize: 20 }
+});
+hudContainer.addChild(keyText);
+
+// Сердечки (графика)
+function createHeartSprite(size: number): Graphics {
+  const heart = new Graphics();
+  
+  // Масштабируем координаты под нужный размер
+  const scale = size / 30; // базовый размер фигуры ~30px
+  
+  heart.poly([
+    { x: 15 * scale, y: 5 * scale },  // верхушка левой доли
+    { x: 10 * scale, y: 0 * scale },  // левая верхняя точка
+    { x: 5 * scale, y: 5 * scale },   // левый изгиб
+    { x: 5 * scale, y: 10 * scale },  // левая середина
+    { x: 15 * scale, y: 20 * scale }, // нижний кончик
+    { x: 25 * scale, y: 10 * scale }, // правая середина
+    { x: 25 * scale, y: 5 * scale },  // правый изгиб
+    { x: 20 * scale, y: 0 * scale },  // правая верхняя точка
+    { x: 15 * scale, y: 5 * scale },  // замыкание
+  ]).fill(0xff0000);
+  
+  return heart;
+}
+
+const hearts: Graphics[] = [];
+const heartSize = 24;
+for (let i = 0; i < 3; i++) {
+  const heart = createHeartSprite(heartSize);
+  heart.x = 10 + i * (heartSize + 5);
+  heart.y = 70;
+  hudContainer.addChild(heart);
+  hearts.push(heart);
+}
+
+// Функция для обновления позиций HUD при изменении размера окна
+function updateHUDPositions() {
+  const padding = 10;
+  const screenWidth = app.screen.width;
+
+  // Левая группа: заголовок и уровень
+  titleText.x = padding;
+  titleText.y = padding;
+  
+  levelText.x = titleText.x + 230; // фиксированный отступ, можно подогнать
+  levelText.y = padding;
+
+  // Правая группа: ключ и сердечки
+  // Общая ширина правой группы
+  const heartsWidth = hearts.length * (heartSize + 5) - 5;
+  const keyWidth = keyIcon.width + 5 + keyText.width;
+  const rightGroupWidth = heartsWidth + keyWidth + 30;
+  let rightGroupX = screenWidth - padding - rightGroupWidth;
+
+  // Позиционируем ключ
+  keyIcon.x = rightGroupX;
+  keyIcon.y = padding + (titleText.height - keyIcon.height) / 2;
+  keyText.x = keyIcon.x + keyIcon.width + 5;
+  keyText.y = keyIcon.y + (keyIcon.height - keyText.height) / 2;
+
+  // Позиционируем сердечки справа от ключа
+  for (let i = 0; i < hearts.length; i++) {
+    hearts[i].x = keyText.x + keyText.width + 20 + i * (heartSize + 5);
+    hearts[i].y = padding + (titleText.height - heartSize);
+  }
+
+ // Вычисляем высоту HUD (от верхнего края до нижнего края самого нижнего элемента)
+  const maxY = Math.max(
+    titleText.y + titleText.height,
+    levelText.y + levelText.height,
+    keyIcon.y + keyIcon.height,
+    keyText.y + keyText.height,
+    ...hearts.map(h => h.y + heartSize)
+  );
+  const hudHeight = maxY ; // добавляем нижний отступ
+
+   // Обновляем фон: прямоугольник от верхнего края экрана до нижней границы HUD
+  hudBackground.clear();
+  hudBackground.rect(0, 0, screenWidth, hudHeight);
+  hudBackground.fill({ color: 0x000000, alpha: 0.6 });
+}
+
+// Вызываем при первой отрисовке и при изменении размера окна
+updateHUDPositions();
+window.addEventListener('resize', updateHUDPositions);
+//----------------------------------------------------------------
+
   // --- Отрисовка карты (тайловый слой) ---
   for (let row = 0; row < groundLayer.height; row++) {
     for (let col = 0; col < groundLayer.width; col++) {
@@ -144,6 +271,7 @@ interface Item {
   }
 
   // Создаём спрайт игрока
+  let playerHealth = 3; // начальное здоровье
   const playerSprite = new Sprite(playerTextures.down[0]);
   playerSprite.anchor.set(0.5);
   const startCol = 3;
@@ -236,7 +364,7 @@ interface Item {
     const item = items[index];
     if (item.type === 'key') {
       keysCollected++;
-      console.log(`Ключей: ${keysCollected}`);
+      keyText.text = `${keysCollected}/${requiredKeys}`;
       if (keysCollected === requiredKeys) {
         console.log('Все ключи собраны! Можно открыть дверь.');
         // TODO: изменить тайл входа (gid 5292) на проходимый
@@ -307,6 +435,14 @@ interface Item {
       if (enemy.health <= 0) continue;
       if (enemy.col === playerCol && enemy.row === playerRow) {
         console.log('Враг атакован!');
+           playerHealth--;
+    // Обновляем видимость сердец
+    for (let i = 0; i < hearts.length; i++) {
+      hearts[i].visible = i < playerHealth;
+    }
+    if (playerHealth <= 0) {
+      console.log('Game Over');
+    }
         worldContainer.removeChild(enemy.sprite);
         enemies.splice(i, 1);
         // TODO: нанести урон игроку
