@@ -1,19 +1,23 @@
-import { Container, Sprite, Texture, Rectangle } from 'pixi.js';
+import { Container, Sprite, Texture, Rectangle, Graphics } from 'pixi.js';
 import { TiledObjectLayer, Enemy } from './types';
 import { TileMap } from './TileMap';
 import { Player } from './Player';
 
 export class EnemyManager {
   public enemies: Enemy[] = [];
-  private container: Container;
+  private container: Container;       // общий контейнер для всех врагов 
   private tileMap: TileMap;
   private speed: number = 1.5;
+  private heartSize: number = 10;      // размер сердечка над врагом
 
-  constructor(warriorLayer: TiledObjectLayer | undefined, tilesetTexture: Texture, firstgid: number, tileSize: number, container: Container, tileMap: TileMap) {
-    this.container = container;
+  constructor(warriorLayer: TiledObjectLayer | undefined, tilesetTexture: Texture, firstgid: number, tileSize: number, worldContainer: Container, tileMap: TileMap) {
+    this.container = new Container();  
+    worldContainer.addChild(this.container);
     this.tileMap = tileMap;
+
     if (!warriorLayer) return;
     const tilesPerRow = Math.floor(tilesetTexture.width / tileSize);
+
     for (const obj of warriorLayer.objects) {
       const col = Math.floor(obj.x / tileSize);
       const row = Math.floor(obj.y / tileSize);
@@ -24,29 +28,72 @@ export class EnemyManager {
         source: tilesetTexture.source,
         frame: new Rectangle(tileX, tileY, tileSize, tileSize),
       });
+
+      // --- Создаём контейнер для отдельного врага ---
+      const enemyContainer = new Container();
+      enemyContainer.x = col * tileSize + tileSize / 2;
+      enemyContainer.y = row * tileSize + tileSize / 2;
+      this.container.addChild(enemyContainer);
+
+      // Спрайт врага
       const sprite = new Sprite(texture);
       sprite.anchor.set(0.5);
-      sprite.x = col * tileSize + tileSize / 2;
-      sprite.y = row * tileSize + tileSize / 2;
-      this.container.addChild(sprite);
+      enemyContainer.addChild(sprite);
+
+      // --- Сердечки здоровья ---
+      const hearts = this.createHearts(2, this.heartSize);
+      // Позиционируем сердечки над спрайтом
+      const totalHeartsWidth = hearts.length * (this.heartSize + 2) - 2; // 2px отступ между сердцами
+      const startX = -totalHeartsWidth / 2;
+      for (let i = 0; i < hearts.length; i++) {
+        hearts[i].x = startX + i * (this.heartSize + 2);
+        hearts[i].y = -sprite.height / 2 - this.heartSize / 2 - 2; // чуть выше спрайта
+        enemyContainer.addChild(hearts[i]);
+      }
 
       this.enemies.push({
+        container: enemyContainer,
         sprite,
+        hearts,
         col,
         row,
         health: 2,
         isMoving: false,
-        moveTargetX: col * tileSize + tileSize / 2,
-        moveTargetY: row * tileSize + tileSize / 2,
+        moveTargetX: enemyContainer.x,
+        moveTargetY: enemyContainer.y,
       });
     }
+  }
+
+  // Создание графического сердечка
+  private createHearts(count: number, size: number): Graphics[] {
+    const hearts: Graphics[] = [];
+    for (let i = 0; i < count; i++) {
+      const heart = new Graphics();
+      const scale = size / 30; 
+      heart.poly([
+        { x: 15 * scale, y: 5 * scale },
+        { x: 10 * scale, y: 0 * scale },
+        { x: 5 * scale, y: 5 * scale },
+        { x: 5 * scale, y: 10 * scale },
+        { x: 15 * scale, y: 20 * scale },
+        { x: 25 * scale, y: 10 * scale },
+        { x: 25 * scale, y: 5 * scale },
+        { x: 20 * scale, y: 0 * scale },
+        { x: 15 * scale, y: 5 * scale },
+      ]).fill(0xff0000);
+      heart.visible = true;
+      hearts.push(heart);
+    }
+    return hearts;
   }
 
   public update(player: Player) {
     for (const enemy of this.enemies) {
       if (enemy.health <= 0) continue;
 
-      const distToTarget = Math.hypot(enemy.moveTargetX - enemy.sprite.x, enemy.moveTargetY - enemy.sprite.y);
+      // Проверяем, достиг ли враг цели
+      const distToTarget = Math.hypot(enemy.moveTargetX - enemy.container.x, enemy.moveTargetY - enemy.container.y);
       if (!enemy.isMoving || distToTarget < 1) {
         // Выбор новой цели
         const playerCol = player.col;
@@ -85,16 +132,17 @@ export class EnemyManager {
         }
       }
 
+      // Движение к цели
       if (enemy.isMoving) {
-        const dx = enemy.moveTargetX - enemy.sprite.x;
-        const dy = enemy.moveTargetY - enemy.sprite.y;
+        const dx = enemy.moveTargetX - enemy.container.x;
+        const dy = enemy.moveTargetY - enemy.container.y;
         const dist = Math.hypot(dx, dy);
         if (dist > this.speed) {
-          enemy.sprite.x += (dx / dist) * this.speed;
-          enemy.sprite.y += (dy / dist) * this.speed;
+          enemy.container.x += (dx / dist) * this.speed;
+          enemy.container.y += (dy / dist) * this.speed;
         } else {
-          enemy.sprite.x = enemy.moveTargetX;
-          enemy.sprite.y = enemy.moveTargetY;
+          enemy.container.x = enemy.moveTargetX;
+          enemy.container.y = enemy.moveTargetY;
           enemy.isMoving = false;
         }
       }
@@ -107,20 +155,27 @@ export class EnemyManager {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
       if (enemy.health <= 0) continue;
-      const enemyCol = Math.floor(enemy.sprite.x / this.tileMap.tileSize);
-      const enemyRow = Math.floor(enemy.sprite.y / this.tileMap.tileSize);
-      if (enemyCol === playerCol && enemyRow === playerRow) {
+
+      if (enemy.col === playerCol && enemy.row === playerRow) {
         player.takeDamage();
         enemy.health--;
+
+        // Обновляем видимость сердечек
+        for (let j = 0; j < enemy.hearts.length; j++) {
+          enemy.hearts[j].visible = j < enemy.health;
+        }
+
         onPlayerDamage(player.health);
+
         if (enemy.health <= 0) {
-          this.container.removeChild(enemy.sprite);
+          // Удаляем контейнер врага из общего контейнера
+          this.container.removeChild(enemy.container);
           this.enemies.splice(i, 1);
         }
         if (player.health <= 0) {
-          // Game Over
+          console.log('Game Over');
         }
-        break;
+        break; // одно столкновение за кадр
       }
     }
   }

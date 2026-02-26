@@ -1,4 +1,4 @@
-import { Sprite } from "pixi.js";
+import { Sprite, Graphics, Container } from "pixi.js";
 
 export interface TiledLayer {
   id: number;
@@ -43,9 +43,12 @@ export interface TiledMap {
 }
 
 // --- Игровые типы ---
+// --- Игровые типы ---
 export interface Enemy {
-  sprite: Sprite;
-  col: number;          // логические координаты клетки
+  container: Container;     // контейнер для спрайта и сердец
+  sprite: Sprite;           // сам спрайт врага (дочерний)
+  hearts: Graphics[];       // массив сердечек
+  col: number;
   row: number;
   health: number;
   isMoving: boolean;
