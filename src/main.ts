@@ -1,4 +1,4 @@
-import { Application, Assets, Texture, Rectangle } from 'pixi.js';
+import { Application, Assets, Texture, Rectangle, Graphics } from 'pixi.js';
 import { TileMap } from './TileMap';
 import { Player } from './Player';
 import { EnemyManager } from './EnemyManager';
@@ -49,6 +49,12 @@ import { TiledMap, TiledObjectLayer } from './types';
   const warriorLayer = mapData.layers.find((layer): layer is TiledObjectLayer => layer.name === 'wariors');
   const enemyManager = new EnemyManager(warriorLayer, tilesetTexture, firstgid, tileMap.tileSize, tileMap.container, tileMap);
 
+// Массив для визуальных эффектов атаки
+const attackEffects: { graphic: Graphics; timer: number }[] = [];
+let attackCooldown = 0; // 0 - можно атаковать
+const ATTACK_COOLDOWN_FRAMES = 20; // примерно 0.3 сек при 60fps
+
+
   // HUD
   const keyGid = 921;
   const keyLocalId = keyGid - firstgid;
@@ -62,9 +68,37 @@ import { TiledMap, TiledObjectLayer } from './types';
   const hud = new HUD(app, keyTexture, 3);
   app.stage.addChild(hud.container);
 
-  // Управление клавишами
-  window.addEventListener("keydown", (e) => player.setKey(e.code, true));
-  window.addEventListener("keyup", (e) => player.setKey(e.code, false));
+ const tileSize=32;
+window.addEventListener("keydown", (e: KeyboardEvent) => {
+  if (e.code.startsWith("Arrow")) {
+    e.preventDefault();
+    player.setKey(e.code, true);
+  }
+  if (e.code === "Space" && attackCooldown <= 0) {
+    e.preventDefault();
+    const attackCell = player.getAttackCell();
+    if (attackCell) {
+      const hit = enemyManager.attackEnemyAt(attackCell.col, attackCell.row, 1);
+      
+      // Создаём визуальный эффект в клетке атаки
+      const effect = new Graphics()
+        .rect(0, 0, tileSize, tileSize)
+        .fill({ color: hit ? 0xff0000 : 0xaaaaaa, alpha: 0.6 });
+      effect.x = attackCell.col * tileSize;
+      effect.y = attackCell.row * tileSize;
+      tileMap.container.addChild(effect);
+      attackEffects.push({ graphic: effect, timer: 10 }); // живёт 10 кадров
+
+      attackCooldown = ATTACK_COOLDOWN_FRAMES;
+    }
+  }
+});
+
+window.addEventListener("keyup", (e: KeyboardEvent) => {
+  if (e.code.startsWith("Arrow")) {
+    player.setKey(e.code, false);
+  }
+});
 
   // Переменные для инвентаря
   let keysCollected = 0;
@@ -106,6 +140,18 @@ import { TiledMap, TiledObjectLayer } from './types';
     enemyManager.checkCollisions(player, (health) => {
       hud.updateHealth(health);
     });
+
+    // Обновление кулдауна атаки
+if (attackCooldown > 0) attackCooldown--;
+
+// Обновление визуальных эффектов
+for (let i = attackEffects.length - 1; i >= 0; i--) {
+  attackEffects[i].timer--;
+  if (attackEffects[i].timer <= 0) {
+    tileMap.container.removeChild(attackEffects[i].graphic);
+    attackEffects.splice(i, 1);
+  }
+}
 
     updateCamera();
   });

@@ -61,6 +61,7 @@ export class EnemyManager {
         isMoving: false,
         moveTargetX: enemyContainer.x,
         moveTargetY: enemyContainer.y,
+        justDamaged: false,  
       });
     }
   }
@@ -150,17 +151,23 @@ export class EnemyManager {
   }
 
   public checkCollisions(player: Player, onPlayerDamage: (health: number) => void) {
-    const playerCol = player.col;
-    const playerRow = player.row;
-    for (let i = this.enemies.length - 1; i >= 0; i--) {
-      const enemy = this.enemies[i];
-      if (enemy.health <= 0) continue;
+  const playerCol = player.col;
+  const playerRow = player.row;
+  for (let i = this.enemies.length - 1; i >= 0; i--) {
+    const enemy = this.enemies[i];
+    if (enemy.health <= 0) continue;
 
-      if (enemy.col === playerCol && enemy.row === playerRow) {
+    const enemyCol = enemy.col; // Math.floor(enemy.sprite.x / this.tileMap.tileSize)
+    const enemyRow = enemy.row;
+
+    if (enemyCol === playerCol && enemyRow === playerRow) {
+      // Если ещё не наносили урон в этом контакте
+      if (!enemy.justDamaged) {
         player.takeDamage();
         enemy.health--;
+        enemy.justDamaged = true;
 
-        // Обновляем видимость сердечек
+        // Обновляем сердечки 
         for (let j = 0; j < enemy.hearts.length; j++) {
           enemy.hearts[j].visible = j < enemy.health;
         }
@@ -168,15 +175,38 @@ export class EnemyManager {
         onPlayerDamage(player.health);
 
         if (enemy.health <= 0) {
-          // Удаляем контейнер врага из общего контейнера
           this.container.removeChild(enemy.container);
           this.enemies.splice(i, 1);
         }
         if (player.health <= 0) {
           console.log('Game Over');
         }
-        break; // одно столкновение за кадр
       }
+    } else {
+      // Если враг не на клетке игрока, сбрасываем флаг
+      enemy.justDamaged = false;
     }
   }
+}
+
+  public attackEnemyAt(col: number, row: number, damage: number): boolean {
+  for (let i = 0; i < this.enemies.length; i++) {
+    const enemy = this.enemies[i];
+    if (enemy.health <= 0) continue;
+    if (enemy.col === col && enemy.row === row) {
+      enemy.health -= damage;
+      enemy.justDamaged = true;  
+      // Обновляем видимость сердечек
+      for (let j = 0; j < enemy.hearts.length; j++) {
+        enemy.hearts[j].visible = j < enemy.health;
+      }
+      if (enemy.health <= 0) {
+        this.container.removeChild(enemy.container);
+        this.enemies.splice(i, 1);
+      }
+      return true; // попал
+    }
+  }
+  return false; // промах
+}
 }

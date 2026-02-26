@@ -110,4 +110,24 @@ export class Player {
     this.health -= amount;
     return this.health <= 0;
   }
+
+  public getAttackCell(): { col: number; row: number } | null {
+  const currentCol = this.col;
+  const currentRow = this.row;
+  let col = currentCol, row = currentRow;
+  switch (this.direction) {
+    case 'up':    row = currentRow - 1; break;
+    case 'down':  row = currentRow + 1; break;
+    case 'left':  col = currentCol - 1; break;
+    case 'right': col = currentCol + 1; break;
+    default: return null;
+  }
+  // Проверка границ карты
+  if (col < 0 || col >= this.tileMap.groundLayer.width || row < 0 || row >= this.tileMap.groundLayer.height) {
+    return null;
+  }
+  return { col, row };
+}
+
+
 }

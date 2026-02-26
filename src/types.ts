@@ -42,11 +42,11 @@ export interface TiledMap {
   tilesets: { firstgid: number; source: string }[];
 }
 
-// --- Игровые типы ---
+
 // --- Игровые типы ---
 export interface Enemy {
   container: Container;     // контейнер для спрайта и сердец
-  sprite: Sprite;           // сам спрайт врага (дочерний)
+  sprite: Sprite;           // сам спрайт врага 
   hearts: Graphics[];       // массив сердечек
   col: number;
   row: number;
@@ -54,6 +54,7 @@ export interface Enemy {
   isMoving: boolean;
   moveTargetX: number;
   moveTargetY: number;
+  justDamaged?: boolean; // флаг, был ли уже нанесён урон в текущем контакте
 }
 
 export interface Item {
