@@ -6,6 +6,7 @@ export interface TiledLayer {
   data: number[];
   width: number;
   height: number;
+  type: 'tilelayer';  
 }
 
 interface TiledObject {
@@ -14,7 +15,7 @@ interface TiledObject {
   id: number;
   name: string;
   rotation: number;
-  type: string;
+  type: string; 
   visible: boolean;
   width: number;
   x: number;
@@ -33,8 +34,19 @@ export interface TiledObjectLayer {
   y: number;
 }
 
-export interface TiledMap {
+export interface TiledGroup {
+  id: number;
+  name: string;
   layers: (TiledLayer | TiledObjectLayer)[];
+  opacity: number;
+  type: "group";
+  visible: boolean;
+  x: number;
+  y: number;
+}
+
+export interface TiledMap {
+  layers: (TiledLayer | TiledObjectLayer | TiledGroup)[];
   tilewidth: number;
   tileheight: number;
   width: number;

@@ -138,4 +138,8 @@ export class HUD {
   public updateKeys(collected: number) {
     this.keyText.text = `${collected}/${this.requiredKeys}`;
   }
+
+ public setLevel(level: string) {
+  this.levelText.text = level;
+}
 }

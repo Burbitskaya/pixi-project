@@ -129,5 +129,8 @@ export class Player {
   return { col, row };
 }
 
+public setTileMap(tileMap: TileMap) {
+  this.tileMap = tileMap;
+}
 
 }
