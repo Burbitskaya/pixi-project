@@ -150,17 +150,19 @@ export class EnemyManager {
     }
   }
 
- public checkCollisions(player: Player, onPlayerDamage: (health: number) => void) {
+
+public checkCollisions(player: Player, onPlayerDamage: (health: number) => void) {
   const playerX = player.sprite.x;
   const playerY = player.sprite.y;
-  const threshold = 10; // пикселей
+  const threshold = 20; // расстояние между центрами для срабатывания урона
 
   for (let i = this.enemies.length - 1; i >= 0; i--) {
     const enemy = this.enemies[i];
     if (enemy.health <= 0) continue;
 
-    const enemyX = enemy.sprite.x;
-    const enemyY = enemy.sprite.y;
+    const enemyX = enemy.container.x;
+    const enemyY = enemy.container.y;
+  
     const dx = playerX - enemyX;
     const dy = playerY - enemyY;
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -168,7 +170,6 @@ export class EnemyManager {
     if (dist < threshold) {
       if (!enemy.justDamaged) {
         player.takeDamage();
-        enemy.health--;
         enemy.justDamaged = true;
 
         // Обновляем сердечки врага
@@ -183,11 +184,10 @@ export class EnemyManager {
           this.enemies.splice(i, 1);
         }
         if (player.health <= 0) {
-          // можно вызвать колбэк или обработать здесь
+          console.log('Player died');
         }
       }
     } else {
-      // Если враг далеко, сбрасываем флаг
       enemy.justDamaged = false;
     }
   }

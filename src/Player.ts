@@ -8,17 +8,17 @@ export class Player {
   private animFrame: number = 0;
   private animTimer: number = 0;
   private textures: Record<string, Texture[]>;
-  private tileMap: TileMap;
+  private tileMap: TileMap | null; // может быть null до установки карты
   private keys: Record<string, boolean> = {};
   public speed: number = 3;
 
-  constructor(textures: Record<string, Texture[]>, tileMap: TileMap, startCol: number, startRow: number) {
+  constructor(textures: Record<string, Texture[]>, tileMap: TileMap | null, startCol: number, startRow: number, tileSize: number) {
     this.textures = textures;
     this.tileMap = tileMap;
     this.sprite = new Sprite(textures.down[0]);
     this.sprite.anchor.set(0.5);
-    this.sprite.x = startCol * tileMap.tileSize + tileMap.tileSize / 2;
-    this.sprite.y = startRow * tileMap.tileSize + tileMap.tileSize / 2;
+    this.sprite.x = startCol * tileSize + tileSize / 2;
+    this.sprite.y = startRow * tileSize + tileSize / 2;
   }
 
   public setKey(code: string, pressed: boolean) {
@@ -28,6 +28,8 @@ export class Player {
   }
 
   public update() {
+    if (!this.tileMap) return; // карта ещё не загружена
+
     let dx = 0, dy = 0;
     if (this.keys['ArrowLeft']) dx = -1;
     if (this.keys['ArrowRight']) dx = 1;
@@ -99,10 +101,12 @@ export class Player {
   }
 
   public get col() {
+    if (!this.tileMap) return 0;
     return Math.floor(this.sprite.x / this.tileMap.tileSize);
   }
 
   public get row() {
+    if (!this.tileMap) return 0;
     return Math.floor(this.sprite.y / this.tileMap.tileSize);
   }
 
@@ -112,25 +116,25 @@ export class Player {
   }
 
   public getAttackCell(): { col: number; row: number } | null {
-  const currentCol = this.col;
-  const currentRow = this.row;
-  let col = currentCol, row = currentRow;
-  switch (this.direction) {
-    case 'up':    row = currentRow - 1; break;
-    case 'down':  row = currentRow + 1; break;
-    case 'left':  col = currentCol - 1; break;
-    case 'right': col = currentCol + 1; break;
-    default: return null;
+    if (!this.tileMap) return null;
+    const currentCol = this.col;
+    const currentRow = this.row;
+    let col = currentCol, row = currentRow;
+    switch (this.direction) {
+      case 'up':    row = currentRow - 1; break;
+      case 'down':  row = currentRow + 1; break;
+      case 'left':  col = currentCol - 1; break;
+      case 'right': col = currentCol + 1; break;
+      default: return null;
+    }
+    // Проверка границ карты
+    if (col < 0 || col >= this.tileMap.groundLayer.width || row < 0 || row >= this.tileMap.groundLayer.height) {
+      return null;
+    }
+    return { col, row };
   }
-  // Проверка границ карты
-  if (col < 0 || col >= this.tileMap.groundLayer.width || row < 0 || row >= this.tileMap.groundLayer.height) {
-    return null;
+
+  public setTileMap(tileMap: TileMap) {
+    this.tileMap = tileMap;
   }
-  return { col, row };
-}
-
-public setTileMap(tileMap: TileMap) {
-  this.tileMap = tileMap;
-}
-
 }

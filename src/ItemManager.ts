@@ -27,12 +27,4 @@ export class ItemManager {
     }
   }
 
-  public collectAt(col: number, row: number): { type: string } | null {
-    const index = this.items.findIndex(item => item.col === col && item.row === row);
-    if (index === -1) return null;
-    const item = this.items[index];
-    this.container.removeChild(item.sprite);
-    this.items.splice(index, 1);
-    return { type: item.type };
-  }
 }
