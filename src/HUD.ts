@@ -7,6 +7,7 @@ export class HUD {
   private keyIcon: Sprite;
   private titleText: Text;
   private levelText: Text;
+  private hintText: Text;
   private hudBackground: Graphics;
   private heartSize = 24;
   private requiredKeys: number;
@@ -51,6 +52,20 @@ export class HUD {
       this.hearts.push(heart);
     }
 
+     // --- Создание подсказки ---
+    this.hintText = new Text({
+      text: '←↑↓→ движение   ПРОБЕЛ атака',
+      style: {
+        fill: '#ffffff',
+        fontSize: 14,
+        fontFamily: 'Arial',
+      }
+    });
+    this.hintText.alpha = 0.7;
+    this.hintText.anchor.set(1, 1); 
+    this.container.addChild(this.hintText);
+    // -------------------------
+
     this.updatePositions();
     window.addEventListener('resize', () => this.updatePositions());
   }
@@ -75,6 +90,7 @@ export class HUD {
   private updatePositions() {
     const padding = 10;
     const screenWidth = this.app.screen.width;
+    const screenHeight = this.app.screen.height;
 
     this.titleText.x = padding;
     this.titleText.y = padding;
@@ -108,6 +124,9 @@ export class HUD {
     this.hudBackground.clear();
     this.hudBackground.rect(0, 0, screenWidth, hudHeight);
     this.hudBackground.fill({ color: 0x000000, alpha: 0.6 });
+
+    this.hintText.x = screenWidth - 10;
+    this.hintText.y = screenHeight - 10;
   }
 
   public updateHealth(health: number) {

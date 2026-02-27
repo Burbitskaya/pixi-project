@@ -164,7 +164,6 @@ export class EnemyManager {
       // Если ещё не наносили урон в этом контакте
       if (!enemy.justDamaged) {
         player.takeDamage();
-        enemy.health--;
         enemy.justDamaged = true;
 
         // Обновляем сердечки 
@@ -179,7 +178,7 @@ export class EnemyManager {
           this.enemies.splice(i, 1);
         }
         if (player.health <= 0) {
-          console.log('Game Over');
+           location.reload();
         }
       }
     } else {

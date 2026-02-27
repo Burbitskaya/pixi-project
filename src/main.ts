@@ -66,8 +66,12 @@ const ATTACK_COOLDOWN_FRAMES = 20; // примерно 0.3 сек при 60fps
     frame: new Rectangle(keyTileX, keyTileY, tileMap.tileSize, tileMap.tileSize),
   });
   const hud = new HUD(app, keyTexture, 3);
+
   app.stage.addChild(hud.container);
 
+
+
+  
  const tileSize=32;
 window.addEventListener("keydown", (e: KeyboardEvent) => {
   if (e.code.startsWith("Arrow")) {
@@ -133,7 +137,8 @@ window.addEventListener("keyup", (e: KeyboardEvent) => {
         hud.updateKeys(keysCollected);
         if (keysCollected === 3) console.log('Все ключи собраны!');
       } else if (collected.type === 'helth') {
-        // лечение
+          let playerHealth = Math.min(player.health + 1, 3); 
+          hud.updateHealth(playerHealth); 
       }
     }
 
