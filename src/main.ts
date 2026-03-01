@@ -5,6 +5,7 @@ import { EnemyManager } from './EnemyManager';
 import { ItemManager } from './ItemManager';
 import { HUD } from './HUD';
 import { TiledMap, TiledLayer, TiledObjectLayer, TiledGroup } from './types';
+import { SoundManager } from './SoundManager';
 
 (async () => {
   const app = new Application();
@@ -123,6 +124,9 @@ import { TiledMap, TiledLayer, TiledObjectLayer, TiledGroup } from './types';
   // Перемещаем HUD на самый верх 
   app.stage.setChildIndex(hud.container, app.stage.children.length - 1);
 
+  await SoundManager.getInstance().loadSounds();
+  SoundManager.getInstance().playBackgroundMusic();
+
   // --- Эффекты атаки и кулдаун ---
   const attackEffects: { graphic: Graphics; timer: number }[] = [];
   let attackCooldown = 0;
@@ -194,6 +198,7 @@ const itemAtPlayer = currentItemManager.items.find(item => item.col === player.c
 if (itemAtPlayer) {
   if (itemAtPlayer.type === 'key') {
     // Удаляем ключ
+    SoundManager.getInstance().playKeyPickup();
     currentItemManager.items = currentItemManager.items.filter(i => i !== itemAtPlayer);
     currentTileMap.container.removeChild(itemAtPlayer.sprite);
     keysCollected++;
@@ -201,6 +206,7 @@ if (itemAtPlayer) {
   } else if (itemAtPlayer.type === 'helth') {
     // Зелье забираем только если здоровье не полное
     if (player.health < 3) {
+      SoundManager.getInstance().playHealthPickup();
       currentItemManager.items = currentItemManager.items.filter(i => i !== itemAtPlayer);
       currentTileMap.container.removeChild(itemAtPlayer.sprite);
       player.health = Math.min(player.health + 1, 3);
@@ -214,6 +220,7 @@ if (itemAtPlayer) {
     if (keysCollected === 3) {
       const gid = currentTileMap.getGidAt(player.col, player.row);
       if (gid === 3969) { // тайл входа
+        SoundManager.getInstance().playLevelComplete();
         goToNextLevel();
         return; // пропускаем остальную логику этого кадра
       }
@@ -223,6 +230,7 @@ if (itemAtPlayer) {
     currentEnemyManager.checkCollisions(player, (health) => {
       hud.updateHealth(health);
       if (health <= 0) {
+        SoundManager.getInstance().playPlayerDie();
         location.reload(); // смерть -> перезагрузка
       }
     });

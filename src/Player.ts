@@ -1,5 +1,6 @@
 import { Sprite, Texture } from 'pixi.js';
 import { TileMap } from './TileMap';
+import { SoundManager } from './SoundManager';
 
 export class Player {
   public sprite: Sprite;
@@ -61,8 +62,10 @@ export class Player {
 
       if (newCol !== currentCol || newRow !== currentRow) {
         if (!this.tileMap.isWalkable(newCol, newRow)) {
+          
           // Диагональ: пробуем поочерёдно
           if (dx !== 0 && dy !== 0) {
+           
             const tryX = this.sprite.x + dx * this.speed;
             const tryColX = Math.floor(tryX / this.tileMap.tileSize);
             if (tryColX !== currentCol && !this.tileMap.isWalkable(tryColX, currentRow)) {
@@ -86,13 +89,16 @@ export class Player {
 
       this.sprite.x = newX;
       this.sprite.y = newY;
+      
 
       // Анимация движения
       this.animTimer++;
       if (this.animTimer >= 5) {
         this.animTimer = 0;
         this.animFrame = (this.animFrame + 1) % 3;
+        SoundManager.getInstance().playFootstep();
       }
+       
       this.sprite.texture = this.textures[this.direction][this.animFrame];
     } else {
       // Стоим
@@ -112,6 +118,7 @@ export class Player {
 
   public takeDamage(amount: number = 1) {
     this.health -= amount;
+    SoundManager.getInstance().playPlayerHurt();
     return this.health <= 0;
   }
 
@@ -131,6 +138,7 @@ export class Player {
     if (col < 0 || col >= this.tileMap.groundLayer.width || row < 0 || row >= this.tileMap.groundLayer.height) {
       return null;
     }
+    SoundManager.getInstance().playPlayerAttack();
     return { col, row };
   }
 

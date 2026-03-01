@@ -2,6 +2,7 @@ import { Container, Sprite, Texture, Rectangle, Graphics } from 'pixi.js';
 import { TiledObjectLayer, Enemy } from './types';
 import { TileMap } from './TileMap';
 import { Player } from './Player';
+import { SoundManager } from './SoundManager';
 
 export class EnemyManager {
   public enemies: Enemy[] = [];
@@ -169,22 +170,14 @@ public checkCollisions(player: Player, onPlayerDamage: (health: number) => void)
 
     if (dist < threshold) {
       if (!enemy.justDamaged) {
+        SoundManager.getInstance().playEnemyBite();
         player.takeDamage();
         enemy.justDamaged = true;
 
-        // Обновляем сердечки врага
-        for (let j = 0; j < enemy.hearts.length; j++) {
-          enemy.hearts[j].visible = j < enemy.health;
-        }
-
         onPlayerDamage(player.health);
 
-        if (enemy.health <= 0) {
-          this.container.removeChild(enemy.container);
-          this.enemies.splice(i, 1);
-        }
         if (player.health <= 0) {
-          console.log('Player died');
+          SoundManager.getInstance().playPlayerDie();
         }
       }
     } else {
@@ -198,6 +191,7 @@ public checkCollisions(player: Player, onPlayerDamage: (health: number) => void)
     const enemy = this.enemies[i];
     if (enemy.health <= 0) continue;
     if (enemy.col === col && enemy.row === row) {
+      SoundManager.getInstance().playEnemyHurt();
       enemy.health -= damage;
       enemy.justDamaged = true;  
       // Обновляем видимость сердечек
@@ -205,6 +199,7 @@ public checkCollisions(player: Player, onPlayerDamage: (health: number) => void)
         enemy.hearts[j].visible = j < enemy.health;
       }
       if (enemy.health <= 0) {
+         SoundManager.getInstance().playEnemyDie();
         this.container.removeChild(enemy.container);
         this.enemies.splice(i, 1);
       }
