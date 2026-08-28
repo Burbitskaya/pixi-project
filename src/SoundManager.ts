@@ -6,6 +6,7 @@ export class SoundManager {
   private musicVolume: number = 0.3;
   private sfxVolume: number = 0.5;
   private isMuted: boolean = false;
+  private musicStarted: boolean = false;
 
   private constructor() {}
 
@@ -27,6 +28,7 @@ export class SoundManager {
       loop: true,
       volume: this.musicVolume,
       preload: true,
+      singleInstance: true,
     });
 
     // Эффекты (однократные)
@@ -43,8 +45,32 @@ export class SoundManager {
   }
 
   // ---------- Воспроизведение ----------
-  public playBackgroundMusic() {
-    sound.play("bgMusic");
+  public async playBackgroundMusic() {
+    if (this.musicStarted || this.isMuted) return;
+
+    const ctx = sound.context.audioContext;
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
+    if (ctx.state !== "running") return;
+
+    sound.context.paused = false;
+    sound.play("bgMusic", { loop: true, volume: this.musicVolume });
+    this.musicStarted = true;
+  }
+
+  public startMusicOnUserGesture() {
+    const tryStart = () => {
+      void this.playBackgroundMusic().then(() => {
+        if (!this.musicStarted) return;
+        window.removeEventListener("pointerdown", tryStart);
+        window.removeEventListener("keydown", tryStart);
+        document.getElementById("start-overlay")?.classList.add("hidden");
+      });
+    };
+
+    window.addEventListener("pointerdown", tryStart);
+    window.addEventListener("keydown", tryStart);
   }
 
   public stopBackgroundMusic() {
