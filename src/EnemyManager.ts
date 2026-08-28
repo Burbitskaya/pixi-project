@@ -1,18 +1,25 @@
-import { Container, Sprite, Texture, Rectangle, Graphics } from 'pixi.js';
-import { TiledObjectLayer, Enemy } from './types';
-import { TileMap } from './TileMap';
-import { Player } from './Player';
-import { SoundManager } from './SoundManager';
+import { Container, Sprite, Texture, Rectangle, Graphics } from "pixi.js";
+import { TiledObjectLayer, Enemy } from "./types";
+import { TileMap } from "./TileMap";
+import { Player } from "./Player";
+import { SoundManager } from "./SoundManager";
 
 export class EnemyManager {
   public enemies: Enemy[] = [];
-  private container: Container;       // общий контейнер для всех врагов 
+  private container: Container; // общий контейнер для всех врагов
   private tileMap: TileMap;
   private speed: number = 1.5;
-  private heartSize: number = 10;      // размер сердечка над врагом
+  private heartSize: number = 10; // размер сердечка над врагом
 
-  constructor(warriorLayer: TiledObjectLayer | undefined, tilesetTexture: Texture, firstgid: number, tileSize: number, worldContainer: Container, tileMap: TileMap) {
-    this.container = new Container();  
+  constructor(
+    warriorLayer: TiledObjectLayer | undefined,
+    tilesetTexture: Texture,
+    firstgid: number,
+    tileSize: number,
+    worldContainer: Container,
+    tileMap: TileMap,
+  ) {
+    this.container = new Container();
     worldContainer.addChild(this.container);
     this.tileMap = tileMap;
 
@@ -62,7 +69,7 @@ export class EnemyManager {
         isMoving: false,
         moveTargetX: enemyContainer.x,
         moveTargetY: enemyContainer.y,
-        justDamaged: false,  
+        justDamaged: false,
       });
     }
   }
@@ -72,18 +79,20 @@ export class EnemyManager {
     const hearts: Graphics[] = [];
     for (let i = 0; i < count; i++) {
       const heart = new Graphics();
-      const scale = size / 30; 
-      heart.poly([
-        { x: 15 * scale, y: 5 * scale },
-        { x: 10 * scale, y: 0 * scale },
-        { x: 5 * scale, y: 5 * scale },
-        { x: 5 * scale, y: 10 * scale },
-        { x: 15 * scale, y: 20 * scale },
-        { x: 25 * scale, y: 10 * scale },
-        { x: 25 * scale, y: 5 * scale },
-        { x: 20 * scale, y: 0 * scale },
-        { x: 15 * scale, y: 5 * scale },
-      ]).fill(0xff0000);
+      const scale = size / 30;
+      heart
+        .poly([
+          { x: 15 * scale, y: 5 * scale },
+          { x: 10 * scale, y: 0 * scale },
+          { x: 5 * scale, y: 5 * scale },
+          { x: 5 * scale, y: 10 * scale },
+          { x: 15 * scale, y: 20 * scale },
+          { x: 25 * scale, y: 10 * scale },
+          { x: 25 * scale, y: 5 * scale },
+          { x: 20 * scale, y: 0 * scale },
+          { x: 15 * scale, y: 5 * scale },
+        ])
+        .fill(0xff0000);
       heart.visible = true;
       hearts.push(heart);
     }
@@ -95,12 +104,16 @@ export class EnemyManager {
       if (enemy.health <= 0) continue;
 
       // Проверяем, достиг ли враг цели
-      const distToTarget = Math.hypot(enemy.moveTargetX - enemy.container.x, enemy.moveTargetY - enemy.container.y);
+      const distToTarget = Math.hypot(
+        enemy.moveTargetX - enemy.container.x,
+        enemy.moveTargetY - enemy.container.y,
+      );
       if (!enemy.isMoving || distToTarget < 1) {
         // Выбор новой цели
         const playerCol = player.col;
         const playerRow = player.row;
-        const distToPlayer = Math.abs(enemy.col - playerCol) + Math.abs(enemy.row - playerRow);
+        const distToPlayer =
+          Math.abs(enemy.col - playerCol) + Math.abs(enemy.row - playerRow);
 
         let targetCol = enemy.col;
         let targetRow = enemy.row;
@@ -121,11 +134,21 @@ export class EnemyManager {
           }
         }
 
-        if ((targetCol !== enemy.col || targetRow !== enemy.row) &&
-            this.tileMap.isWalkable(targetCol, targetRow) &&
-            !this.enemies.some(e => e !== enemy && e.col === targetCol && e.row === targetRow && e.health > 0)) {
-          enemy.moveTargetX = targetCol * this.tileMap.tileSize + this.tileMap.tileSize / 2;
-          enemy.moveTargetY = targetRow * this.tileMap.tileSize + this.tileMap.tileSize / 2;
+        if (
+          (targetCol !== enemy.col || targetRow !== enemy.row) &&
+          this.tileMap.isWalkable(targetCol, targetRow) &&
+          !this.enemies.some(
+            (e) =>
+              e !== enemy &&
+              e.col === targetCol &&
+              e.row === targetRow &&
+              e.health > 0,
+          )
+        ) {
+          enemy.moveTargetX =
+            targetCol * this.tileMap.tileSize + this.tileMap.tileSize / 2;
+          enemy.moveTargetY =
+            targetRow * this.tileMap.tileSize + this.tileMap.tileSize / 2;
           enemy.isMoving = true;
           enemy.col = targetCol;
           enemy.row = targetRow;
@@ -151,61 +174,63 @@ export class EnemyManager {
     }
   }
 
+  public checkCollisions(
+    player: Player,
+    onPlayerDamage: (health: number) => void,
+  ) {
+    const playerX = player.sprite.x;
+    const playerY = player.sprite.y;
+    const threshold = 20; // расстояние между центрами для срабатывания урона
 
-public checkCollisions(player: Player, onPlayerDamage: (health: number) => void) {
-  const playerX = player.sprite.x;
-  const playerY = player.sprite.y;
-  const threshold = 20; // расстояние между центрами для срабатывания урона
+    for (let i = this.enemies.length - 1; i >= 0; i--) {
+      const enemy = this.enemies[i];
+      if (enemy.health <= 0) continue;
 
-  for (let i = this.enemies.length - 1; i >= 0; i--) {
-    const enemy = this.enemies[i];
-    if (enemy.health <= 0) continue;
+      const enemyX = enemy.container.x;
+      const enemyY = enemy.container.y;
 
-    const enemyX = enemy.container.x;
-    const enemyY = enemy.container.y;
-  
-    const dx = playerX - enemyX;
-    const dy = playerY - enemyY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+      const dx = playerX - enemyX;
+      const dy = playerY - enemyY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
 
-    if (dist < threshold) {
-      if (!enemy.justDamaged) {
-        SoundManager.getInstance().playEnemyBite();
-        player.takeDamage();
-        enemy.justDamaged = true;
+      if (dist < threshold) {
+        if (!enemy.justDamaged) {
+          SoundManager.getInstance().playEnemyBite();
+          player.takeDamage();
+          enemy.justDamaged = true;
 
-        onPlayerDamage(player.health);
+          onPlayerDamage(player.health);
 
-        if (player.health <= 0) {
-          SoundManager.getInstance().playPlayerDie();
+          if (player.health <= 0) {
+            SoundManager.getInstance().playPlayerDie();
+          }
         }
+      } else {
+        enemy.justDamaged = false;
       }
-    } else {
-      enemy.justDamaged = false;
     }
   }
-}
 
   public attackEnemyAt(col: number, row: number, damage: number): boolean {
-  for (let i = 0; i < this.enemies.length; i++) {
-    const enemy = this.enemies[i];
-    if (enemy.health <= 0) continue;
-    if (enemy.col === col && enemy.row === row) {
-      SoundManager.getInstance().playEnemyHurt();
-      enemy.health -= damage;
-      enemy.justDamaged = true;  
-      // Обновляем видимость сердечек
-      for (let j = 0; j < enemy.hearts.length; j++) {
-        enemy.hearts[j].visible = j < enemy.health;
+    for (let i = 0; i < this.enemies.length; i++) {
+      const enemy = this.enemies[i];
+      if (enemy.health <= 0) continue;
+      if (enemy.col === col && enemy.row === row) {
+        SoundManager.getInstance().playEnemyHurt();
+        enemy.health -= damage;
+        enemy.justDamaged = true;
+        // Обновляем видимость сердечек
+        for (let j = 0; j < enemy.hearts.length; j++) {
+          enemy.hearts[j].visible = j < enemy.health;
+        }
+        if (enemy.health <= 0) {
+          SoundManager.getInstance().playEnemyDie();
+          this.container.removeChild(enemy.container);
+          this.enemies.splice(i, 1);
+        }
+        return true; // попал
       }
-      if (enemy.health <= 0) {
-         SoundManager.getInstance().playEnemyDie();
-        this.container.removeChild(enemy.container);
-        this.enemies.splice(i, 1);
-      }
-      return true; // попал
     }
+    return false; // промах
   }
-  return false; // промах
-}
 }

@@ -1,11 +1,17 @@
-import { Container, Sprite, Texture, Rectangle } from 'pixi.js';
-import { TiledObjectLayer, Item } from './types';
+import { Container, Sprite, Texture, Rectangle } from "pixi.js";
+import { TiledObjectLayer, Item } from "./types";
 
 export class ItemManager {
   public items: Item[] = [];
   private container: Container;
 
-  constructor(objectLayer: TiledObjectLayer | undefined, tilesetTexture: Texture, firstgid: number, tileSize: number, container: Container) {
+  constructor(
+    objectLayer: TiledObjectLayer | undefined,
+    tilesetTexture: Texture,
+    firstgid: number,
+    tileSize: number,
+    container: Container,
+  ) {
     this.container = container;
     if (!objectLayer) return;
     const tilesPerRow = Math.floor(tilesetTexture.width / tileSize);
@@ -26,5 +32,4 @@ export class ItemManager {
       this.items.push({ sprite, type: obj.type, col, row });
     }
   }
-
 }

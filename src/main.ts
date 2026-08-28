@@ -1,12 +1,12 @@
-import { Application, Assets, Texture, Rectangle, Graphics } from 'pixi.js';
-import { TileMap } from './TileMap';
-import { Player } from './Player';
-import { EnemyManager } from './EnemyManager';
-import { ItemManager } from './ItemManager';
-import { HUD } from './HUD';
-import { TiledMap, TiledLayer, TiledObjectLayer, TiledGroup } from './types';
-import { SoundManager } from './SoundManager';
-import { assetUrl } from './assetUrl';
+import { Application, Assets, Texture, Rectangle, Graphics } from "pixi.js";
+import { TileMap } from "./TileMap";
+import { Player } from "./Player";
+import { EnemyManager } from "./EnemyManager";
+import { ItemManager } from "./ItemManager";
+import { HUD } from "./HUD";
+import { TiledMap, TiledLayer, TiledObjectLayer, TiledGroup } from "./types";
+import { SoundManager } from "./SoundManager";
+import { assetUrl } from "./assetUrl";
 
 (async () => {
   const app = new Application();
@@ -15,7 +15,9 @@ import { assetUrl } from './assetUrl';
 
   // Загрузка ресурсов
   const [mapData, tilesetTexture, heroTexture] = await Promise.all([
-    fetch(assetUrl("assets/map.json")).then((res) => res.json()) as Promise<TiledMap>,
+    fetch(assetUrl("assets/map.json")).then((res) =>
+      res.json(),
+    ) as Promise<TiledMap>,
     Assets.load(assetUrl("assets/tileset.png")),
     Assets.load(assetUrl("assets/hero.png")),
   ]);
@@ -23,25 +25,35 @@ import { assetUrl } from './assetUrl';
   const firstgid = mapData.tilesets[0]?.firstgid ?? 1;
   const tileSize = mapData.tilewidth;
 
-  // Извлекаем все группы уровней 
+  // Извлекаем все группы уровней
   const levelGroups = mapData.layers
-    .filter((layer): layer is TiledGroup => layer.type === 'group')
+    .filter((layer): layer is TiledGroup => layer.type === "group")
     .sort((a, b) => parseInt(a.name) - parseInt(b.name)); // сортируем по номеру
 
-  if (levelGroups.length === 0) throw new Error('No level groups found');
+  if (levelGroups.length === 0) throw new Error("No level groups found");
   let currentLevelIndex = 0; // начинаем с первого
 
   // --- Подготовка текстур игрока ---
   const frameWidth = 32;
   const frameHeight = 36;
   const directions = ["up", "right", "down", "left"];
-  const playerTextures: Record<string, Texture[]> = { down: [], left: [], right: [], up: [] };
+  const playerTextures: Record<string, Texture[]> = {
+    down: [],
+    left: [],
+    right: [],
+    up: [],
+  };
   for (let row = 0; row < 4; row++) {
     const dir = directions[row];
     for (let col = 0; col < 3; col++) {
       const frame = new Texture({
         source: heroTexture.source,
-        frame: new Rectangle(col * frameWidth, row * frameHeight, frameWidth, frameHeight),
+        frame: new Rectangle(
+          col * frameWidth,
+          row * frameHeight,
+          frameWidth,
+          frameHeight,
+        ),
       });
       playerTextures[dir].push(frame);
     }
@@ -61,68 +73,91 @@ import { assetUrl } from './assetUrl';
 
   // --- Функция загрузки уровня по индексу ---
   function loadLevel(levelIndex: number, startCol = 3, startRow = 1) {
-  const group = levelGroups[levelIndex];
-  if (!group) throw new Error(`Level ${levelIndex} not found`);
+    const group = levelGroups[levelIndex];
+    if (!group) throw new Error(`Level ${levelIndex} not found`);
 
-  const groundLayer = group.layers.find((l): l is TiledLayer => l.name === 'land');
-  const objectLayer = group.layers.find((l): l is TiledObjectLayer => l.name === 'objects');
-  const enemyLayer = group.layers.find((l): l is TiledObjectLayer => l.name === 'enemies');
-  if (!groundLayer) throw new Error('No land layer in level');
+    const groundLayer = group.layers.find(
+      (l): l is TiledLayer => l.name === "land",
+    );
+    const objectLayer = group.layers.find(
+      (l): l is TiledObjectLayer => l.name === "objects",
+    );
+    const enemyLayer = group.layers.find(
+      (l): l is TiledObjectLayer => l.name === "enemies",
+    );
+    if (!groundLayer) throw new Error("No land layer in level");
 
-  // Удаляем старую карту, если есть
-  if (currentTileMap) {
-    app.stage.removeChild(currentTileMap.container);
+    // Удаляем старую карту, если есть
+    if (currentTileMap) {
+      app.stage.removeChild(currentTileMap.container);
+    }
+
+    // Создаём новую карту
+    const newTileMap = new TileMap(
+      groundLayer,
+      tilesetTexture,
+      firstgid,
+      tileSize,
+    );
+    app.stage.addChild(newTileMap.container);
+
+    // Создаём новые менеджеры
+    const newItemManager = new ItemManager(
+      objectLayer,
+      tilesetTexture,
+      firstgid,
+      tileSize,
+      newTileMap.container,
+    );
+    const newEnemyManager = new EnemyManager(
+      enemyLayer,
+      tilesetTexture,
+      firstgid,
+      tileSize,
+      newTileMap.container,
+      newTileMap,
+    );
+
+    // Переносим игрока
+    if (player) {
+      player.sprite.parent?.removeChild(player.sprite);
+      newTileMap.container.addChild(player.sprite);
+      player.setTileMap(newTileMap);
+      player.sprite.x = startCol * tileSize + tileSize / 2;
+      player.sprite.y = startRow * tileSize + tileSize / 2;
+    }
+
+    // Обновляем глобальные ссылки
+    currentTileMap = newTileMap;
+    currentItemManager = newItemManager;
+    currentEnemyManager = newEnemyManager;
+
+    // Сбрасываем ключи и обновляем HUD
+    keysCollected = 0;
+    hud.updateKeys(0);
+    hud.setLevel(`lvl ${group.name}`);
+
+    // Добавляем HUD на сцену, если ещё не добавлен, и поднимаем наверх
+    if (!hud.container.parent) {
+      app.stage.addChild(hud.container);
+    }
+    app.stage.setChildIndex(hud.container, app.stage.children.length - 1);
   }
-
-  // Создаём новую карту
-  const newTileMap = new TileMap(groundLayer, tilesetTexture, firstgid, tileSize);
-  app.stage.addChild(newTileMap.container);
-
-  // Создаём новые менеджеры
-  const newItemManager = new ItemManager(objectLayer, tilesetTexture, firstgid, tileSize, newTileMap.container);
-  const newEnemyManager = new EnemyManager(enemyLayer, tilesetTexture, firstgid, tileSize, newTileMap.container, newTileMap);
-
-  // Переносим игрока
-  if (player) {
-    player.sprite.parent?.removeChild(player.sprite);
-    newTileMap.container.addChild(player.sprite);
-    player.setTileMap(newTileMap);
-    player.sprite.x = startCol * tileSize + tileSize / 2;
-    player.sprite.y = startRow * tileSize + tileSize / 2;
-  }
-
-  // Обновляем глобальные ссылки
-  currentTileMap = newTileMap;
-  currentItemManager = newItemManager;
-  currentEnemyManager = newEnemyManager;
-
-  // Сбрасываем ключи и обновляем HUD
-  keysCollected = 0;
-  hud.updateKeys(0);
-  hud.setLevel(`lvl ${group.name}`);
-
-  // Добавляем HUD на сцену, если ещё не добавлен, и поднимаем наверх
-  if (!hud.container.parent) {
-    app.stage.addChild(hud.container);
-  }
-  app.stage.setChildIndex(hud.container, app.stage.children.length - 1);
-}
   // --- Инициализация переменных, которые будут перезаписываться ---
   let currentTileMap: TileMap;
   let currentItemManager: ItemManager;
   let currentEnemyManager: EnemyManager;
-  let player: Player;
   let keysCollected = 0;
 
   // Создаём игрока (пока без карты, карту загрузим ниже)
-  player = new Player(playerTextures, null as any, 3, 1, tileSize); // tileMap будет назначен в loadLevel
+  const player = new Player(playerTextures, null, 3, 1, tileSize);
 
   // Загружаем первый уровень
   loadLevel(0, 3, 1); // стартовая клетка (3,1)
 
   // --- Добавляем HUD на сцену ---
   app.stage.addChild(hud.container);
-  // Перемещаем HUD на самый верх 
+  // Перемещаем HUD на самый верх
   app.stage.setChildIndex(hud.container, app.stage.children.length - 1);
 
   await SoundManager.getInstance().loadSounds();
@@ -143,7 +178,11 @@ import { assetUrl } from './assetUrl';
       e.preventDefault();
       const attackCell = player.getAttackCell();
       if (attackCell) {
-        const hit = currentEnemyManager.attackEnemyAt(attackCell.col, attackCell.row, 1);
+        const hit = currentEnemyManager.attackEnemyAt(
+          attackCell.col,
+          attackCell.row,
+          1,
+        );
         const effect = new Graphics()
           .rect(0, 0, tileSize, tileSize)
           .fill({ color: hit ? 0xff0000 : 0xaaaaaa, alpha: 0.6 });
@@ -167,7 +206,7 @@ import { assetUrl } from './assetUrl';
     const nextIndex = currentLevelIndex + 1;
     if (nextIndex < levelGroups.length) {
       currentLevelIndex = nextIndex;
-      loadLevel(nextIndex, 3, 1); // стартовая позиция 
+      loadLevel(nextIndex, 3, 1); // стартовая позиция
     } else {
       location.reload();
     }
@@ -185,8 +224,12 @@ import { assetUrl } from './assetUrl';
     const maxX = 0;
     const minY = screenHeight - mapHeight;
     const maxY = 0;
-    currentTileMap.container.x = Math.round(Math.max(minX, Math.min(maxX, targetX)));
-    currentTileMap.container.y = Math.round(Math.max(minY, Math.min(maxY, targetY)));
+    currentTileMap.container.x = Math.round(
+      Math.max(minX, Math.min(maxX, targetX)),
+    );
+    currentTileMap.container.y = Math.round(
+      Math.max(minY, Math.min(maxY, targetY)),
+    );
   }
 
   // --- Игровой цикл ---
@@ -195,32 +238,39 @@ import { assetUrl } from './assetUrl';
     currentEnemyManager.update(player);
 
     // Сбор предметов
-const itemAtPlayer = currentItemManager.items.find(item => item.col === player.col && item.row === player.row);
-if (itemAtPlayer) {
-  if (itemAtPlayer.type === 'key') {
-    // Удаляем ключ
-    SoundManager.getInstance().playKeyPickup();
-    currentItemManager.items = currentItemManager.items.filter(i => i !== itemAtPlayer);
-    currentTileMap.container.removeChild(itemAtPlayer.sprite);
-    keysCollected++;
-    hud.updateKeys(keysCollected);
-  } else if (itemAtPlayer.type === 'helth') {
-    // Зелье забираем только если здоровье не полное
-    if (player.health < 3) {
-      SoundManager.getInstance().playHealthPickup();
-      currentItemManager.items = currentItemManager.items.filter(i => i !== itemAtPlayer);
-      currentTileMap.container.removeChild(itemAtPlayer.sprite);
-      player.health = Math.min(player.health + 1, 3);
-      hud.updateHealth(player.health);
+    const itemAtPlayer = currentItemManager.items.find(
+      (item) => item.col === player.col && item.row === player.row,
+    );
+    if (itemAtPlayer) {
+      if (itemAtPlayer.type === "key") {
+        // Удаляем ключ
+        SoundManager.getInstance().playKeyPickup();
+        currentItemManager.items = currentItemManager.items.filter(
+          (i) => i !== itemAtPlayer,
+        );
+        currentTileMap.container.removeChild(itemAtPlayer.sprite);
+        keysCollected++;
+        hud.updateKeys(keysCollected);
+      } else if (itemAtPlayer.type === "helth") {
+        // Зелье забираем только если здоровье не полное
+        if (player.health < 3) {
+          SoundManager.getInstance().playHealthPickup();
+          currentItemManager.items = currentItemManager.items.filter(
+            (i) => i !== itemAtPlayer,
+          );
+          currentTileMap.container.removeChild(itemAtPlayer.sprite);
+          player.health = Math.min(player.health + 1, 3);
+          hud.updateHealth(player.health);
+        }
+        // Если здоровье полное, ничего не делаем — предмет остаётся
+      }
     }
-    // Если здоровье полное, ничего не делаем — предмет остаётся
-  }
-}
 
     // Проверка перехода на следующий уровень
     if (keysCollected === 3) {
       const gid = currentTileMap.getGidAt(player.col, player.row);
-      if (gid === 3969) { // тайл входа
+      if (gid === 3969) {
+        // тайл входа
         SoundManager.getInstance().playLevelComplete();
         goToNextLevel();
         return; // пропускаем остальную логику этого кадра

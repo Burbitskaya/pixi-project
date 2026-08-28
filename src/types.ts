@@ -6,7 +6,7 @@ export interface TiledLayer {
   data: number[];
   width: number;
   height: number;
-  type: 'tilelayer';  
+  type: "tilelayer";
 }
 
 interface TiledObject {
@@ -15,7 +15,7 @@ interface TiledObject {
   id: number;
   name: string;
   rotation: number;
-  type: string; 
+  type: string;
   visible: boolean;
   width: number;
   x: number;
@@ -28,7 +28,7 @@ export interface TiledObjectLayer {
   name: string;
   objects: TiledObject[];
   opacity: number;
-  type: 'objectgroup';
+  type: "objectgroup";
   visible: boolean;
   x: number;
   y: number;
@@ -54,12 +54,11 @@ export interface TiledMap {
   tilesets: { firstgid: number; source: string }[];
 }
 
-
 // --- Игровые типы ---
 export interface Enemy {
-  container: Container;     // контейнер для спрайта и сердец
-  sprite: Sprite;           // сам спрайт врага 
-  hearts: Graphics[];       // массив сердечек
+  container: Container; // контейнер для спрайта и сердец
+  sprite: Sprite; // сам спрайт врага
+  hearts: Graphics[]; // массив сердечек
   col: number;
   row: number;
   health: number;
@@ -71,7 +70,7 @@ export interface Enemy {
 
 export interface Item {
   sprite: Sprite;
-  type: string;         // 'key' или 'helth'
+  type: string; // 'key' или 'helth'
   col: number;
   row: number;
 }

@@ -1,4 +1,11 @@
-import { Container, Graphics, Text, Sprite, Texture, Application } from 'pixi.js';
+import {
+  Container,
+  Graphics,
+  Text,
+  Sprite,
+  Texture,
+  Application,
+} from "pixi.js";
 
 export class HUD {
   public container: Container;
@@ -22,14 +29,14 @@ export class HUD {
     this.container.addChild(this.hudBackground);
 
     this.titleText = new Text({
-      text: 'Dungeon Crawler',
-      style: { fill: '#ffffff', fontSize: 24, fontWeight: 'bold' }
+      text: "Dungeon Crawler",
+      style: { fill: "#ffffff", fontSize: 24, fontWeight: "bold" },
     });
     this.container.addChild(this.titleText);
 
     this.levelText = new Text({
-      text: 'lvl 1',
-      style: { fill: '#ffffff', fontSize: 20 }
+      text: "lvl 1",
+      style: { fill: "#ffffff", fontSize: 20 },
     });
     this.container.addChild(this.levelText);
 
@@ -40,7 +47,7 @@ export class HUD {
 
     this.keyText = new Text({
       text: `0/${requiredKeys}`,
-      style: { fill: '#ffffff', fontSize: 20 }
+      style: { fill: "#ffffff", fontSize: 20 },
     });
     this.container.addChild(this.keyText);
 
@@ -52,38 +59,40 @@ export class HUD {
       this.hearts.push(heart);
     }
 
-     // --- Создание подсказки ---
+    // --- Создание подсказки ---
     this.hintText = new Text({
-      text: '←↑↓→ движение   ПРОБЕЛ атака',
+      text: "←↑↓→ движение   ПРОБЕЛ атака",
       style: {
-        fill: '#ffffff',
+        fill: "#ffffff",
         fontSize: 14,
-        fontFamily: 'Arial',
-      }
+        fontFamily: "Arial",
+      },
     });
     this.hintText.alpha = 0.7;
-    this.hintText.anchor.set(1, 1); 
+    this.hintText.anchor.set(1, 1);
     this.container.addChild(this.hintText);
     // -------------------------
 
     this.updatePositions();
-    window.addEventListener('resize', () => this.updatePositions());
+    window.addEventListener("resize", () => this.updatePositions());
   }
 
   private createHeartSprite(size: number): Graphics {
     const heart = new Graphics();
     const scale = size / 30;
-    heart.poly([
-      { x: 15 * scale, y: 5 * scale },
-      { x: 10 * scale, y: 0 * scale },
-      { x: 5 * scale, y: 5 * scale },
-      { x: 5 * scale, y: 10 * scale },
-      { x: 15 * scale, y: 20 * scale },
-      { x: 25 * scale, y: 10 * scale },
-      { x: 25 * scale, y: 5 * scale },
-      { x: 20 * scale, y: 0 * scale },
-      { x: 15 * scale, y: 5 * scale },
-    ]).fill(0xff0000);
+    heart
+      .poly([
+        { x: 15 * scale, y: 5 * scale },
+        { x: 10 * scale, y: 0 * scale },
+        { x: 5 * scale, y: 5 * scale },
+        { x: 5 * scale, y: 10 * scale },
+        { x: 15 * scale, y: 20 * scale },
+        { x: 25 * scale, y: 10 * scale },
+        { x: 25 * scale, y: 5 * scale },
+        { x: 20 * scale, y: 0 * scale },
+        { x: 15 * scale, y: 5 * scale },
+      ])
+      .fill(0xff0000);
     return heart;
   }
 
@@ -103,12 +112,15 @@ export class HUD {
     const rightGroupX = screenWidth - padding - rightGroupWidth;
 
     this.keyIcon.x = rightGroupX;
-    this.keyIcon.y = padding + (this.titleText.height - this.keyIcon.height) / 2;
+    this.keyIcon.y =
+      padding + (this.titleText.height - this.keyIcon.height) / 2;
     this.keyText.x = this.keyIcon.x + this.keyIcon.width + 5;
-    this.keyText.y = this.keyIcon.y + (this.keyIcon.height - this.keyText.height) / 2;
+    this.keyText.y =
+      this.keyIcon.y + (this.keyIcon.height - this.keyText.height) / 2;
 
     for (let i = 0; i < this.hearts.length; i++) {
-      this.hearts[i].x = this.keyText.x + this.keyText.width + 20 + i * (this.heartSize + 5);
+      this.hearts[i].x =
+        this.keyText.x + this.keyText.width + 20 + i * (this.heartSize + 5);
       this.hearts[i].y = padding + (this.titleText.height - this.heartSize);
     }
 
@@ -117,7 +129,7 @@ export class HUD {
       this.levelText.y + this.levelText.height,
       this.keyIcon.y + this.keyIcon.height,
       this.keyText.y + this.keyText.height,
-      ...this.hearts.map(h => h.y + this.heartSize)
+      ...this.hearts.map((h) => h.y + this.heartSize),
     );
     const hudHeight = maxY;
 
@@ -139,7 +151,7 @@ export class HUD {
     this.keyText.text = `${collected}/${this.requiredKeys}`;
   }
 
- public setLevel(level: string) {
-  this.levelText.text = level;
-}
+  public setLevel(level: string) {
+    this.levelText.text = level;
+  }
 }
