@@ -1,4 +1,5 @@
 import { sound } from '@pixi/sound';
+import { assetUrl } from './assetUrl';
 
 export class SoundManager {
     private static instance: SoundManager;
@@ -22,23 +23,23 @@ export class SoundManager {
     public async loadSounds() {
         // Фоновая музыка (зацикленная)
         sound.add('bgMusic', {
-            url: '/assets/sounds/background.wav',
+            url: assetUrl('assets/sounds/background.wav'),
             loop: true,
             volume: this.musicVolume,
             preload: true
         });
 
         // Эффекты (однократные)
-        sound.add('footstep',     '/assets/sounds/footstep.wav');
-        sound.add('playerAttack', '/assets/sounds/swish.wav');      // герой ударяет
-        sound.add('enemyHurt',    '/assets/sounds/hit.wav');        // враг теряет здоровье
-        sound.add('enemyBite',    '/assets/sounds/bite.wav');       // враг кусает
-        sound.add('playerHurt',   '/assets/sounds/player_hurt.wav');// герой теряет здоровье
-        sound.add('enemyDie',     '/assets/sounds/enemy_die.wav');
-        sound.add('playerDie',    '/assets/sounds/player_die.wav');
-        sound.add('keyPickup',    '/assets/sounds/key.wav');
-        sound.add('healthPickup', '/assets/sounds/health.wav');
-        sound.add('levelComplete','/assets/sounds/level_complete.mp3'); // переход на новый уровень
+        sound.add('footstep', assetUrl('assets/sounds/footstep.wav'));
+        sound.add('playerAttack', assetUrl('assets/sounds/swish.wav'));
+        sound.add('enemyHurt', assetUrl('assets/sounds/hit.wav'));
+        sound.add('enemyBite', assetUrl('assets/sounds/bite.wav'));
+        sound.add('playerHurt', assetUrl('assets/sounds/player_hurt.wav'));
+        sound.add('enemyDie', assetUrl('assets/sounds/enemy_die.wav'));
+        sound.add('playerDie', assetUrl('assets/sounds/player_die.wav'));
+        sound.add('keyPickup', assetUrl('assets/sounds/key.wav'));
+        sound.add('healthPickup', assetUrl('assets/sounds/health.wav'));
+        sound.add('levelComplete', assetUrl('assets/sounds/level_complete.mp3'));
     }
 
     // ---------- Воспроизведение ----------

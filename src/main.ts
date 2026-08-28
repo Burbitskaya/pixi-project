@@ -6,6 +6,7 @@ import { ItemManager } from './ItemManager';
 import { HUD } from './HUD';
 import { TiledMap, TiledLayer, TiledObjectLayer, TiledGroup } from './types';
 import { SoundManager } from './SoundManager';
+import { assetUrl } from './assetUrl';
 
 (async () => {
   const app = new Application();
@@ -14,9 +15,9 @@ import { SoundManager } from './SoundManager';
 
   // Загрузка ресурсов
   const [mapData, tilesetTexture, heroTexture] = await Promise.all([
-    fetch("/assets/map.json").then((res) => res.json()) as Promise<TiledMap>,
-    Assets.load("/assets/tileset.png"),
-    Assets.load("/assets/hero.png"),
+    fetch(assetUrl("assets/map.json")).then((res) => res.json()) as Promise<TiledMap>,
+    Assets.load(assetUrl("assets/tileset.png")),
+    Assets.load(assetUrl("assets/hero.png")),
   ]);
 
   const firstgid = mapData.tilesets[0]?.firstgid ?? 1;
