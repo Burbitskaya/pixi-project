@@ -161,7 +161,7 @@ import { assetUrl } from "./assetUrl";
   app.stage.setChildIndex(hud.container, app.stage.children.length - 1);
 
   await SoundManager.getInstance().loadSounds();
-  SoundManager.getInstance().playBackgroundMusic();
+  SoundManager.getInstance().startMusicOnUserGesture();
 
   // --- Эффекты атаки и кулдаун ---
   const attackEffects: { graphic: Graphics; timer: number }[] = [];
